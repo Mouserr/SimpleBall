@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections;
+using UnityEngine;
 
 namespace Assets.Scripts
 {
@@ -13,18 +15,18 @@ namespace Assets.Scripts
 
         public Vector3 normalDirection = Vector3.back;
 
-        private Vector3 startPosition;
         private Plane movementPlane;
-        private float maxDeltaSqr;
+        private Vector3 velocity;
+        private IEnumerator movement;
 
         private void Awake()
         {
             movementPlane = new Plane(normalDirection, WatchingTarget.position);
-            maxDeltaSqr = MaxDelta*MaxDelta;
         }
 
         private void Update()
         {
+            if (movement != null) return;
             float distance;
             Ray centerRay = camera.ScreenPointToRay(
                 new Vector3(camera.pixelWidth/2f, camera.pixelHeight/2f, 0));
@@ -35,10 +37,28 @@ namespace Assets.Scripts
             }
 
             Vector3 delta = WatchingTarget.position - centerRay.GetPoint(distance);
-            if (delta.sqrMagnitude > maxDeltaSqr)
+            float absDelatX = Math.Abs(delta.x);
+            if (absDelatX > MaxDelta)
             {
-                transform.Translate(delta * (delta.magnitude - MaxDelta));
+                movement = moveCoroutine(new Vector3(Mathf.Sign(delta.x)*MaxDelta/2, 0, 0), 0.3f);
+                StartCoroutine(movement);
             }
+        }
+
+        private IEnumerator moveCoroutine(Vector3 shift, float duration)
+        {
+            Vector3 startPosition = transform.position;
+            Vector3 destination = startPosition + shift;
+            float time = 0;
+            float timeScale = 1/duration;
+
+            while ((transform.position - destination).sqrMagnitude > 0.01f)
+            {
+                time += Time.fixedDeltaTime * timeScale;
+                transform.position = Vector3.Lerp(startPosition, destination, time);
+                yield return null;
+            }
+            movement = null;
         }
     }
 }
