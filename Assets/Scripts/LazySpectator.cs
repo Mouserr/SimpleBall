@@ -26,7 +26,7 @@ namespace Assets.Scripts
 
         private void Update()
         {
-            if (movement != null) return;
+            if (movement != null || WatchingTarget == null || !WatchingTarget.gameObject.activeSelf) return;
             float distance;
             Ray centerRay = camera.ScreenPointToRay(
                 new Vector3(camera.pixelWidth/2f, camera.pixelHeight/2f, 0));
@@ -37,11 +37,13 @@ namespace Assets.Scripts
             }
 
             Vector3 delta = WatchingTarget.position - centerRay.GetPoint(distance);
+            transform.Translate(new Vector3(delta.x, 0, 0));
             float absDelatX = Math.Abs(delta.x);
             if (absDelatX > MaxDelta)
             {
-                movement = moveCoroutine(new Vector3(Mathf.Sign(delta.x)*MaxDelta/2, 0, 0), 0.3f);
-                StartCoroutine(movement);
+                
+                //movement = moveCoroutine(new Vector3(delta.x, 0, 0), 0.5f);
+                //StartCoroutine(movement);
             }
         }
 

@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Net.NetworkInformation;
+using System.Collections.Generic;
 using UnityEngine;
-using System.Collections;
 
 public class MovementController : MonoBehaviour
 {
@@ -10,59 +9,92 @@ public class MovementController : MonoBehaviour
     public float JumpSpeed;
     public float MaxJumpTime;
 
-    public float CurrentVelocity;
+    [SerializeField]
+    private Rigidbody model;
 
     private int lastJumpId;
-    private bool isOnPlatform;
+    private HashSet<GameObject> contactingPlatforms = new HashSet<GameObject>();
+
     private float jumpTime;
-    
+
+    public bool IsOnPlatform
+    {
+        get { return contactingPlatforms.Count > 0; }
+    }
+
+    public void StartMove(Vector3 direction)
+    {
+        model.AddForce(direction * Speed);
+    }
+
+    public void SetMove(Vector3 direction)
+    {
+        if (IsOnPlatform)
+        {
+            model.velocity = direction.normalized * Speed;
+        }
+    }
+
     public void Move(Vector3 direction)
     {
-        rigidbody.velocity += direction.normalized * Speed;
+        model.velocity += direction.normalized * Speed;
     }
 
     public void Jump(int jumpId)
     {
-        if (!isOnPlatform && lastJumpId != jumpId) return;
+        if (!IsOnPlatform && lastJumpId != jumpId) return;
 
-        if (isOnPlatform)
+        if (IsOnPlatform)
         {
             jumpTime = 0;
-            isOnPlatform = false;
             lastJumpId = jumpId;
+            contactingPlatforms.Clear();
         }
 
         if (jumpTime >= MaxJumpTime) return;
-        rigidbody.velocity += Vector3.up*JumpSpeed;
+        model.velocity += Vector3.up*JumpSpeed;
         jumpTime += Time.fixedDeltaTime;
     }
 
-    private void OnCollisionEnter(Collision col)
+    public void ContactBottom(GameObject other)
     {
-        if (col.contacts.Length > 0 && col.contacts[0].point.y < transform.position.y)
+        if (other.CompareTag("Platform") && !contactingPlatforms.Contains(other))
         {
-            isOnPlatform = true;
+            Vector3 delta = other.transform.position - transform.position;
+           
+            if (delta.y < 0 && Math.Abs(delta.x) <= 2*Math.Abs(delta.y))
+            {
+                contactingPlatforms.Add(other);
+            }
+        }
+    }
+
+    public void StopContactBottom(GameObject other)
+    {
+        if (other.CompareTag("Platform") && contactingPlatforms.Contains(other))
+        {
+            contactingPlatforms.Remove(other);
         }
     }
 
     private void FixedUpdate()
     {
-        if (isOnPlatform)
+        if (IsOnPlatform)
         {
-            if (Math.Abs(rigidbody.velocity.x) > 0.01)
+          /*  if (Math.Abs(model.velocity.x) > 0.01)
             {
-                rigidbody.AddForce(-rigidbody.velocity.x, 0, 0, ForceMode.VelocityChange);
+                model.AddForce(-model.velocity.x, 0, 0, ForceMode.VelocityChange);
             }
-            if (Math.Abs(rigidbody.velocity.x) < 0.01 && Math.Abs(Math.Abs(rigidbody.velocity.x)) > float.Epsilon)
+            if (Math.Abs(model.velocity.x) < 0.01 && Math.Abs(Math.Abs(model.velocity.x)) > float.Epsilon)
             {
-                rigidbody.velocity = new Vector3(0, rigidbody.velocity.y, rigidbody.velocity.z);
-            }
+                model.velocity = new Vector3(0, model.velocity.y, model.velocity.z);
+            }*/
         }
         else
         {
             if (transform.position.y < -50)
             {
-                rigidbody.Sleep();
+                model.Sleep();
             }
         }
     }

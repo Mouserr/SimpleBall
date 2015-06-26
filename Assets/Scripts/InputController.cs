@@ -2,18 +2,11 @@
 
 namespace Assets.Scripts
 {
-    public class InputController : MonoBehaviour
+    public class InputController : AbstractUnitController
     {
-        private MovementController movementController;
-
         private bool jumpInited;
 
         private int pressID = 0;
-
-        private void Awake()
-        {
-            movementController = GetComponent<MovementController>();
-        }
 
         private void FixedUpdate()
         {
